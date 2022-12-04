@@ -472,6 +472,5 @@ function execute(ast: AstNode[], value: any = null, state: State = {}): any {
 export default function parse(src: string) {
     const lines = parseLines(src.split("\n"))
     const ast = buildAst(lines).first
-    // console.log(JSON.stringify(ast, undefined, 4))
     execute(ast)
 }
