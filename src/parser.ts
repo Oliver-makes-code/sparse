@@ -318,28 +318,26 @@ interface State {
 
 const commands: Commands = {
     "use": (_value, args, line, state, _children) => {
-        if (args.length != 1) throw `Error: Line ${line}: Command  \`use\` must have one argument`
+        if (args.length != 1) throw `Error: Line ${line}: Command  must have one argument`
         const file = parseArg(args[0], state, line, 0)
         return Deno.readTextFileSync(file)
     },
     "store": (value, args, line, state, _children) => {
-        if (args.length == 0) throw `Error: Line ${line}: Command  \`const\` must have one or two arguments`
+        if (args.length == 0) throw `Error: Line ${line}: Command  must have one or two arguments`
         const name = args[0]
         if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
         if (args.length == 1) {
             state.name = value
         } else if (args.length == 2) {
             state[name.value.value] = parseArg(args[1], state, line, 1)
-            return value
-        } else throw `Error: Line ${line}: Command  \`const\` must have one or two arguments`
+        } else throw `Error: Line ${line}: Command  must have one or two arguments`
         return value
-        
     },
     "split": (value, args, line, state, _children) => {
-        if (typeof value != "string") throw `Error: Line ${line}: Command  \`split\` must only be called when the value is a string`
-        if (args.length != 1) throw `Error: Line ${line}: Command  \`split\` must have one argument`
+        if (typeof value != "string") throw `Error: Line ${line}: Command  must only be called when the value is a string`
+        if (args.length != 1) throw `Error: Line ${line}: Command must have one argument`
         const arg = parseArg(args[0], state, line, 0)
-        if (typeof arg != "string") throw `Error: Line ${line}: Argument 0: Argument is not a string or a variable pointing to a string`
+        if (typeof arg != "string") throw `Error: Line ${line}: Argument 0: Argument is not a string`
         return value.split(arg)
     },
     "foreach": (value, _args, line, state, children) => {
@@ -349,12 +347,13 @@ const commands: Commands = {
         }
         return value
     },
-    "join": (value, _args, line, _state, _children) => {
+    "join": (value, args, line, _state, _children) => {
+        if (args.length != 0) throw `Error: Line ${line}: Command must contain no arguments`
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array`
         return value.join("")
     },
     "replace": (value, args, line, state, _children) => {
-        if (args.length != 2) throw `Error: Line ${line}: Command  \`replace\` must have two arguments`
+        if (args.length != 2) throw `Error: Line ${line}: Command  must have two arguments`
         const match = parseArg(args[0], state, line, 0)
         const substitute = parseArg(args[1], state, line, 1)
         return value == match ? substitute : value
@@ -365,8 +364,52 @@ const commands: Commands = {
         else if (args.length == 1)
             console.log(parseArg(args[0], state, line, 0))
         else
-            throw `Error: Line ${line}: Command  \`print\` must have zero or one argument`
+            throw `Error: Line ${line}: Command must have zero or one argument`
         return value
+    },
+    "asint": (value, args, line, state, _children) => {
+        if (typeof value != "string") throw `Error: Line ${line}: Value must be an string`
+        const num = parseInt(value)
+        if (isNaN(num)) throw `Error: Line ${line}: String \`${value}\` cannot be parsed to an int`
+        return num
+    },
+    "addall": (value, _args, line, _state, _children) => {
+        if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
+        let num = 0
+        for (const i of value) {
+            if (typeof i != "number") throw `Error: Line ${line}: Value must be an array of numbers`
+            num += i
+        }
+        return num
+    },
+    "trim": (value, args, line, _state, _children) => {
+        if (args.length != 0) throw `Error: Line ${line}: Command must contain no arguments`
+        if (typeof value != "string") throw `Error: Line ${line}: Value must be an string`
+        return value.trim()
+    },
+    "max": (value, args, line, state, _children) => {
+        if (args.length > 1) throw `Error: Line ${line}: Command must contain zero or one arguments`
+        if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
+        const count = args[0] ? parseArg(args[0], state, line, 0) : 1
+        if (typeof count != "number") throw `Error: Line ${line}: Argument ${0}: Argument is not a number`
+        const sorted = value.sort((a, b) => {
+            if (typeof a != "number" || typeof b != "number") throw `Error: Line ${line}: Value must be an array of numbers`
+            return a - b
+        })
+        if (count > sorted.length) throw `Error: Line ${line}: Argument ${0}: Argument is larger than indecies`
+        return sorted.slice(sorted.length - count)
+    },
+    "min": (value, args, line, state, _children) => {
+        if (args.length > 1) throw `Error: Line ${line}: Command must contain zero or one arguments`
+        if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
+        const count = args[0] ? parseArg(args[0], state, line, 0) : 1
+        if (typeof count != "number") throw `Error: Line ${line}: Argument ${0}: Argument is not a number`
+        const sorted = value.sort((a, b) => {
+            if (typeof a != "number" || typeof b != "number") throw `Error: Line ${line}: Value must be an array of numbers`
+            return a - b
+        })
+        if (count > sorted.length) throw `Error: Line ${line}: Argument ${0}: Argument is larger than indecies`
+        return sorted.slice(0, count)
     },
 }
 
