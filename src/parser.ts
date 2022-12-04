@@ -427,7 +427,7 @@ const commands: Commands = {
         if (args.length != 2) throw `Error: Line ${line}: Command  must have two arguments`
         const first = parseArg(args[0], state, line, 0)
         const second = parseArg(args[1], state, line, 1)
-        if (first == second) {
+        if (first === second) {
             return execute(children!, value, state)
         }
         return value
