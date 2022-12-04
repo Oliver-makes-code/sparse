@@ -35,11 +35,10 @@ interface AstNode {
 
 const NAME_REGEX = /[a-z0-9_]/i
 const NUMBER_REGEX = /[0-9]/
-const SYMBOL_REGEX = /[+\-/*()|&^]/
+const SYMBOL_REGEX = /[+\-/*()|&^%]/
 
 // TODO: support more types of blocks
-const BLOCK_DECS = ["foreach", "function", "if", "elif", "else"]
-const COND_BLOCKS = ["if", "elif"]
+const BLOCK_DECS = ["foreach", "compare"]
 
 function parseLines(lines: string[]): Line[] {
     const out: Line[] = []
@@ -217,10 +216,11 @@ function parseTokens(tokens: Token[], line: number, argnum: number): Pair<TreeNo
             case "operator": {
                 switch (token.value) {
                     case "+": case "-": 
-                    case "*": case "/": {
+                    case "*": case "/":
+                    case "%": {
                         const precedence = getPrecedence(token.value)
                         if (opStack.length > 0){
-                            for (let next = opStack[opStack.length-1]; next.value != "(" && getPrecedence(next.value) > precedence; next = opStack[opStack.length-1]) {
+                            for (let next = opStack[opStack.length-1]; next.value != "(" && getPrecedence(next.value) < precedence; next = opStack[opStack.length-1]) {
                                 outputQueue.unshift(opStack.pop()!)
                                 if (opStack.length == 0) break
                             }
@@ -266,8 +266,8 @@ function parseNode(tokens: Token[], index: number, line: number): Pair<TreeNode,
         first: {
             value: token,
             children: {
-                first: first.first,
-                second: second.first
+                first: second.first,
+                second: first.first
             }
         },
         second: second.second
@@ -276,7 +276,7 @@ function parseNode(tokens: Token[], index: number, line: number): Pair<TreeNode,
 
 function getPrecedence(operator: string): number {
     switch (operator) {
-        case "*": case "/": return 1
+        case "*": case "/": case "%": return 1
         case "+": case "-": return 2
         case "&": return 3
         case "|": return 4
@@ -285,19 +285,17 @@ function getPrecedence(operator: string): number {
     return 0
 }
 
-function buildAst(lines: Line[], index = 0, isCond = false): Pair<AstNode[], number> {
+function buildAst(lines: Line[], index = 0): Pair<AstNode[], number> {
     const nodes: AstNode[] = []
     for (let i = index; i < lines.length; i++) {
         const line = lines[i]
         if (BLOCK_DECS.includes(line.command)) {
-            const block = buildAst(lines, i+1, COND_BLOCKS.includes(line.command))
+            const block = buildAst(lines, i+1)
             i = block.second
             nodes.push({
                 value: line,
                 children: block.first
             })
-        } else if (isCond && line.command == "elif" || line.command == "else") {
-            return {first: nodes, second: i-1}
         } else if (line.command == "end") {
             return {first: nodes, second: i}
         } else {
@@ -327,11 +325,17 @@ const commands: Commands = {
         const name = args[0]
         if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
         if (args.length == 1) {
-            state.name = value
+            state[name.value.value] = value
         } else if (args.length == 2) {
             state[name.value.value] = parseArg(args[1], state, line, 1)
         } else throw `Error: Line ${line}: Command  must have one or two arguments`
         return value
+    },
+    "load": (_value, args, line, state, _children) => {
+        if (args.length != 1) throw `Error: Line ${line}: Command  must have one argument`
+        const name = args[0]
+        if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
+        return state[name.value.value]
     },
     "split": (value, args, line, state, _children) => {
         if (typeof value != "string") throw `Error: Line ${line}: Command must only be called when the value is a string`
@@ -367,7 +371,7 @@ const commands: Commands = {
             throw `Error: Line ${line}: Command must have zero or one argument`
         return value
     },
-    "asint": (value, args, line, state, _children) => {
+    "asint": (value, _args, line, _state, _children) => {
         if (typeof value != "string") throw `Error: Line ${line}: Value must be an string`
         const num = parseInt(value)
         if (isNaN(num)) throw `Error: Line ${line}: String \`${value}\` cannot be parsed to an int`
@@ -416,8 +420,17 @@ const commands: Commands = {
         if (args.length != 1) throw `Error: Line ${line}: Command must have one argument`
         const arg = parseArg(args[0], state, line, 0)
         if (typeof arg != "number") throw `Error: Line ${line}: Argument 0: Argument is not a number`
-        if (arg >= args.length) throw `Error: Line ${line}: Argument 0: Argument is larger than indecies`
+        if (arg > args.length) throw `Error: Line ${line}: Argument 0: Argument is larger than indecies`
         return value[arg]
+    },
+    "compare": (value, args, line, state, children) => {
+        if (args.length != 2) throw `Error: Line ${line}: Command  must have two arguments`
+        const first = parseArg(args[0], state, line, 0)
+        const second = parseArg(args[1], state, line, 1)
+        if (first == second) {
+            return execute(children!, value, state)
+        }
+        return value
     },
 }
 
@@ -435,6 +448,7 @@ function parseArg(arg: TreeNode, state: State, line: number, argnum: number): an
                 case "/": return first / second
                 case "&": return first & second
                 case "|": return first | second
+                case "%": return first % second
                 default: throw `Error: Line ${line}: Argument: ${argnum}: Unknown operator ${arg.value.value}`
             }
         }
@@ -458,5 +472,6 @@ function execute(ast: AstNode[], value: any = null, state: State = {}): any {
 export default function parse(src: string) {
     const lines = parseLines(src.split("\n"))
     const ast = buildAst(lines).first
+    // console.log(JSON.stringify(ast, undefined, 4))
     execute(ast)
 }
