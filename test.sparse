@@ -1,0 +1,20 @@
+# Import test.txt
+use "./test.txt"
+# Declare a variable
+store $a, 1
+# Print the newly declared variable
+print $a
+# Split at newlines
+split "\n"
+# Iterate through each value
+# Note: no indent is needed
+foreach
+    # Map owo to 0, uwu to a, and nya to a*2
+    replace "owo", 0
+    replace "uwu", $a
+    replace "nya", $a*2
+end
+# Join elements to a single string
+join
+# Print the value
+print
