@@ -325,7 +325,7 @@ const commands: Commands = {
     "store": (value, args, line, state, _children) => {
         if (args.length == 0) throw `Error: Line ${line}: Command  \`const\` must have one or two arguments`
         const name = args[0]
-            if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
+        if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
         if (args.length == 1) {
             state.name = value
         } else if (args.length == 2) {
