@@ -337,14 +337,14 @@ const commands: Commands = {
         if (typeof arg != "string") throw `Error: Line ${line}: Argument 0: Argument is not a string or a variable pointing to a string`
         return value.split(arg)
     },
-    "foreach": (value, args, line, state, children) => {
+    "foreach": (value, _args, line, state, children) => {
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array`
         for (let i = 0; i < value.length; i++) {
             value[i] = execute(children!, value[i], state)
         }
         return value
     },
-    "join": (value, args, line, state, _children) => {
+    "join": (value, _args, line, _state, _children) => {
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array`
         return value.join("")
     },
