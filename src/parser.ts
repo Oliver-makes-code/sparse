@@ -357,6 +357,7 @@ const commands: Commands = {
         return value.join("")
     },
     "replace": (value, args, line, state, _children) => {
+        if (Array.isArray(value)) throw `Error: Line ${line}: Value must not be an array`
         if (args.length != 2) throw `Error: Line ${line}: Command  must have two arguments`
         const match = parseArg(args[0], state, line, 0)
         const substitute = parseArg(args[1], state, line, 1)
@@ -376,6 +377,10 @@ const commands: Commands = {
         const num = parseInt(value)
         if (isNaN(num)) throw `Error: Line ${line}: String \`${value}\` cannot be parsed to an int`
         return num
+    },
+    "asstr": (value, _args, line, _state, _children) => {
+        if (typeof value != "number") throw `Error: Line ${line}: Value must be an string`
+        return value.toString()
     },
     "addall": (value, _args, line, _state, _children) => {
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
