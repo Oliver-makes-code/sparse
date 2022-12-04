@@ -323,12 +323,17 @@ const commands: Commands = {
         return Deno.readTextFileSync(file)
     },
     "store": (value, args, line, state, _children) => {
-        if (args.length != 2) throw `Error: Line ${line}: Command  \`const\` must have two arguments`
+        if (args.length == 0) throw `Error: Line ${line}: Command  \`const\` must have one or two arguments`
         const name = args[0]
-        if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
-        const val = parseArg(args[1], state, line, 1)
-        state[name.value.value] = val
+            if (name.value.type != "variable") throw `Error: Line ${line}: Argument 1: Argument is not a variable reference`
+        if (args.length == 1) {
+            state.name = value
+        } else if (args.length == 2) {
+            state[name.value.value] = parseArg(args[1], state, line, 1)
+            return value
+        } else throw `Error: Line ${line}: Command  \`const\` must have one or two arguments`
         return value
+        
     },
     "split": (value, args, line, state, _children) => {
         if (typeof value != "string") throw `Error: Line ${line}: Command  \`split\` must only be called when the value is a string`
