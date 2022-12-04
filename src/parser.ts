@@ -334,7 +334,7 @@ const commands: Commands = {
         return value
     },
     "split": (value, args, line, state, _children) => {
-        if (typeof value != "string") throw `Error: Line ${line}: Command  must only be called when the value is a string`
+        if (typeof value != "string") throw `Error: Line ${line}: Command must only be called when the value is a string`
         if (args.length != 1) throw `Error: Line ${line}: Command must have one argument`
         const arg = parseArg(args[0], state, line, 0)
         if (typeof arg != "string") throw `Error: Line ${line}: Argument 0: Argument is not a string`
@@ -391,25 +391,33 @@ const commands: Commands = {
         if (args.length > 1) throw `Error: Line ${line}: Command must contain zero or one arguments`
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
         const count = args[0] ? parseArg(args[0], state, line, 0) : 1
-        if (typeof count != "number") throw `Error: Line ${line}: Argument ${0}: Argument is not a number`
+        if (typeof count != "number") throw `Error: Line ${line}: Argument 0: Argument is not a number`
         const sorted = value.sort((a, b) => {
             if (typeof a != "number" || typeof b != "number") throw `Error: Line ${line}: Value must be an array of numbers`
             return a - b
         })
-        if (count > sorted.length) throw `Error: Line ${line}: Argument ${0}: Argument is larger than indecies`
+        if (count > sorted.length) throw `Error: Line ${line}: Argument 0: Argument is larger than indecies`
         return sorted.slice(sorted.length - count)
     },
     "min": (value, args, line, state, _children) => {
         if (args.length > 1) throw `Error: Line ${line}: Command must contain zero or one arguments`
         if (!Array.isArray(value)) throw `Error: Line ${line}: Value must be an array of numbers`
         const count = args[0] ? parseArg(args[0], state, line, 0) : 1
-        if (typeof count != "number") throw `Error: Line ${line}: Argument ${0}: Argument is not a number`
+        if (typeof count != "number") throw `Error: Line ${line}: Argument 0: Argument is not a number`
         const sorted = value.sort((a, b) => {
             if (typeof a != "number" || typeof b != "number") throw `Error: Line ${line}: Value must be an array of numbers`
             return a - b
         })
-        if (count > sorted.length) throw `Error: Line ${line}: Argument ${0}: Argument is larger than indecies`
+        if (count > sorted.length) throw `Error: Line ${line}: Argument 0: Argument is larger than indecies`
         return sorted.slice(0, count)
+    },
+    "select": (value, args, line, state, _children) => {
+        if (!Array.isArray(value)) throw `Error: Line ${line}: Command must only be called when the value is an array`
+        if (args.length != 1) throw `Error: Line ${line}: Command must have one argument`
+        const arg = parseArg(args[0], state, line, 0)
+        if (typeof arg != "number") throw `Error: Line ${line}: Argument 0: Argument is not a number`
+        if (arg >= args.length) throw `Error: Line ${line}: Argument 0: Argument is larger than indecies`
+        return value[arg]
     },
 }
 
