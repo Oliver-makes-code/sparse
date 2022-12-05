@@ -450,7 +450,7 @@ function parseArg(arg: TreeNode, state: State, line: number, argnum: number): an
                 case "+": return first + second
                 case "-": return first - second
                 case "*": return first * second
-                case "/": return first / second
+                case "/": return Math.floor(first / second)
                 case "&": return first & second
                 case "|": return first | second
                 case "%": return first % second
